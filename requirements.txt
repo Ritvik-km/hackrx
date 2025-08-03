@@ -1,0 +1,9 @@
+langchain==0.3
+fastapi
+uvicorn[standard]
+openai
+chromadb
+aiohttp
+pydantic
+python-dotenv
+pydantic-settings
