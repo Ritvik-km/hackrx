@@ -69,7 +69,7 @@ async def ask_llm_structured(questions: List[str], retrieved_clauses: List[Docum
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestions:\n{joined_questions}"}
             ],
-            temperature=0.4,
+            temperature=0.0,
             top_p=1.0,
             model=model,
         )
@@ -86,7 +86,23 @@ async def ask_llm_structured(questions: List[str], retrieved_clauses: List[Docum
         if content.strip().startswith("```"):
             content = content.strip().strip("`").strip("json").strip()
 
-        return json.loads(content)
+        # return json.loads(content)
+        result = json.loads(content)
+
+        def _stringify(item):
+            if isinstance(item, list):
+                return " ".join(_stringify(x) for x in item)
+            if isinstance(item, str):
+                return item
+            return str(item)
+
+        raw_answers = result.get("answers", [])
+        if not isinstance(raw_answers, list):
+            raw_answers = [raw_answers]
+
+        result["answers"] = [_stringify(a) for a in raw_answers]
+        return result
+    
     except json.JSONDecodeError as je:
         print("❌ JSON decode error:", je)
         print("🔎 Raw content:\n", content)
@@ -100,7 +116,7 @@ async def answer_single_question(question: str, context: str, instruction: str) 
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{question}"}
             ],
-            temperature=0.4,
+            temperature=0.0,
             top_p=1.0,
         )
         return response.choices[0].message.content.strip()

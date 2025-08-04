@@ -13,6 +13,9 @@ from langchain_core.documents import Document
 import spacy
 import re
 
+nlp = spacy.load("en_core_web_sm")
+nlp.disable_pipes("lemmatizer")
+
 async def download_pdf_to_tempfile(url: str) -> str:
     """Download PDF from URL and save to a temp file"""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
@@ -24,11 +27,10 @@ async def download_pdf_to_tempfile(url: str) -> str:
     return tmp.name
 
 def smart_split_insurance_document(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> List[str]:
-    """
-    Custom splitter for insurance documents that preserves definition integrity
-    """
-    # Split by section numbers first (like 3.22, 10.16, etc.)
-    section_pattern = r'(\n\d+\.\d+\.?\s+[A-Z][^.\n]*(?:\s+means|\s+refers|\s+includes|\s+shall))'
+
+    section_pattern = (
+        r"(\n\d+\.\d+\.?\s+[A-Z][^.\n]*(?:\s+means|\s+refers|\s+includes|\s+shall))"
+    )
     sections = re.split(section_pattern, text)
     
     chunks = []
@@ -62,6 +64,8 @@ def smart_split_insurance_document(text: str, chunk_size: int = 1500, chunk_over
             pipeline = "en_core_web_sm",
             # separators=["\n\n", "\n", ". "]
         )
+        text_splitter._tokenizer = nlp
+        text_splitter._tokenizer.disable_pipes("lemmatizer")
         return text_splitter.split_text(text)
     
     # Post-process: ensure no chunk exceeds maximum safe size (6000 chars ≈ 1500 tokens)
@@ -79,6 +83,9 @@ def smart_split_insurance_document(text: str, chunk_size: int = 1500, chunk_over
                 pipeline = "en_core_web_sm",
                 # separators=["\n\n", "\n", ". "]
             )
+            
+            text_splitter._tokenizer = nlp
+            text_splitter._tokenizer.disable_pipes("lemmatizer")
             sub_chunks = text_splitter.split_text(chunk)
             final_chunks.extend(sub_chunks)
     
