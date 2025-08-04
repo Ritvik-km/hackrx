@@ -61,28 +61,28 @@ def sanitize_metadata(meta: Dict, *, max_val_len: int = 500) -> Dict:
     return serialisable
 
 
-def _is_rare_query(query: str, min_terms: int = 4) -> bool:
-    """Heuristically determine if a query is "rare" and may need a wider search."""
-    terms = re.findall(r"\w+", query)
-    if len(set(t.lower() for t in terms)) < min_terms:
-        return True
-    if re.search(r"\b[A-Z]{2,}\b", query):
-        # Abbreviation-style question, often sparse
-        return True
-    return False
+# def _is_rare_query(query: str, min_terms: int = 4) -> bool:
+#     """Heuristically determine if a query is "rare" and may need a wider search."""
+#     terms = re.findall(r"\w+", query)
+#     if len(set(t.lower() for t in terms)) < min_terms:
+#         return True
+#     if re.search(r"\b[A-Z]{2,}\b", query):
+#         # Abbreviation-style question, often sparse
+#         return True
+#     return False
 
 
-def _generate_alternate_queries(query: str) -> List[str]:
-    """Extract simple alternates like abbreviations or their expansions."""
-    variants: List[str] = []
-    match = re.search(r"(.+?)\((.+?)\)", query)
-    if match:
-        before, inside = match.group(1).strip(), match.group(2).strip()
-        if before:
-            variants.append(before)
-        if inside:
-            variants.append(inside)
-    return variants
+# def _generate_alternate_queries(query: str) -> List[str]:
+#     """Extract simple alternates like abbreviations or their expansions."""
+#     variants: List[str] = []
+#     match = re.search(r"(.+?)\((.+?)\)", query)
+#     if match:
+#         before, inside = match.group(1).strip(), match.group(2).strip()
+#         if before:
+#             variants.append(before)
+#         if inside:
+#             variants.append(inside)
+#     return variants
 
 
 #                               Vector Store Class                            #
@@ -107,7 +107,7 @@ class FAISSVectorStore:
 
         self.index: faiss.IndexFlatIP | None = None
         self.id_to_doc: List[Tuple[str, Dict]] = []
-        self.doc_hashes: set[str] = set()
+        # self.doc_hashes: set[str] = set()
 
         # Embedding model
         if use_google_embeddings:
@@ -129,17 +129,17 @@ class FAISSVectorStore:
         if self.index_path.exists() and self.docs_path.exists():
             self.index = faiss.read_index(str(self.index_path))
             with open(self.docs_path, "rb") as f:
-                # self.id_to_doc = pickle.load(f)
-                data = pickle.load(f)
-                if isinstance(data, dict):
-                    self.id_to_doc = data.get("id_to_doc", [])
-                    self.doc_hashes = set(data.get("doc_hashes", []))
-                else:  # Backwards compatibility
-                    self.id_to_doc = data
-                    self.doc_hashes = {
-                        hashlib.sha256(text.encode("utf-8")).hexdigest()
-                        for text, _ in self.id_to_doc
-                    }
+                self.id_to_doc = pickle.load(f)
+                # data = pickle.load(f)
+                # if isinstance(data, dict):
+                #     self.id_to_doc = data.get("id_to_doc", [])
+                #     self.doc_hashes = set(data.get("doc_hashes", []))
+                # else:  # Backwards compatibility
+                #     self.id_to_doc = data
+                #     self.doc_hashes = {
+                #         hashlib.sha256(text.encode("utf-8")).hexdigest()
+                #         for text, _ in self.id_to_doc
+                #     }
             logger.info("Loaded FAISS index with %d vectors.", self.index.ntotal)
         else:
             self.index = faiss.IndexFlatIP(self.dim)  # Cosine (after L2 normalise)
@@ -148,11 +148,11 @@ class FAISSVectorStore:
     def _save(self) -> None:
         faiss.write_index(self.index, str(self.index_path))
         with open(self.docs_path, "wb") as f:
-            # pickle.dump(self.id_to_doc, f)
-            pickle.dump(
-                {"id_to_doc": self.id_to_doc, "doc_hashes": list(self.doc_hashes)},
-                f,
-            )
+            pickle.dump(self.id_to_doc, f)
+            # pickle.dump(
+            #     {"id_to_doc": self.id_to_doc, "doc_hashes": list(self.doc_hashes)},
+            #     f,
+            # )
 
     # ----------------------------- API methods ----------------------------- #
 
@@ -163,24 +163,30 @@ class FAISSVectorStore:
         if not docs:
             return
         
-        new_docs: List[Document] = []
-        new_hashes: List[str] = []
-        for d in docs:
-            h = hashlib.sha256(d.page_content.encode("utf-8")).hexdigest()
-            if h in self.doc_hashes:
-                continue
-            new_docs.append(d)
-            new_hashes.append(h)
+        # new_docs: List[Document] = []
+        # new_hashes: List[str] = []
+        # for d in docs:
+        #     h = hashlib.sha256(d.page_content.encode("utf-8")).hexdigest()
+        #     if h in self.doc_hashes:
+        #         continue
+        #     new_docs.append(d)
+        #     new_hashes.append(h)
 
-        if not new_docs:
-            logger.info("No new documents to add; all were duplicates.")
-            return
+        # if not new_docs:
+        #     logger.info("No new documents to add; all were duplicates.")
+        #     return
 
         # Sanitize metadata & gather texts
-        # texts = [d.page_content for d in docs]
-        # sanitized_meta = [sanitize_metadata(d.metadata) for d in docs]
-        texts = [d.page_content for d in new_docs]
-        sanitized_meta = [sanitize_metadata(d.metadata) for d in new_docs]
+        texts = [d.page_content for d in docs]
+        sanitized_meta = [sanitize_metadata(d.metadata) for d in docs]
+        # texts = [d.page_content for d in new_docs]
+        # sanitized_meta = [sanitize_metadata(d.metadata) for d in new_docs]
+
+        logger.info(f"🔢 Embedding {len(docs)} chunks...")
+        logger.info(f"🔢 Sample chunk lengths: {[len(doc.page_content.split()) for doc in docs[:5]]}")
+        total_tokens = sum(len(doc.page_content.split()) for doc in docs)
+        logger.info(f"🔢 Total tokens being embedded: {total_tokens}")
+
 
         # Embeddings
         if self._doc_task:
@@ -195,14 +201,14 @@ class FAISSVectorStore:
 
         # Persist mapping
         self.id_to_doc.extend(list(zip(texts, sanitized_meta)))
-        self.doc_hashes.update(new_hashes)
+        # self.doc_hashes.update(new_hashes)
         self._save()
-        # logger.info("Added %d documents (store now has %d).", len(docs), self.index.ntotal)
-        logger.info(
-            "Added %d documents (store now has %d).",
-            len(new_docs),
-            self.index.ntotal,
-        )
+        logger.info("Added %d documents (store now has %d).", len(docs), self.index.ntotal)
+        # logger.info(
+        #     "Added %d documents (store now has %d).",
+        #     len(new_docs),
+        #     self.index.ntotal,
+        # )
 
     # ................................................................. #
 
@@ -242,6 +248,8 @@ class FAISSVectorStore:
         queries: List[str],
         k_per_query: int = 5,
         max_total: int = 15,
+        rare_k: int = 10,
+        alternate_queries: Dict[str, List[str]] | None = None,
     ) -> List[Document]:
         """
         Runs similarity search for each query separately and returns a de-duplicated,
@@ -256,6 +264,18 @@ class FAISSVectorStore:
                 # Retain the *highest* score if doc appears via multiple queries
                 if key not in aggregate or aggregate[key][1] < score:
                     aggregate[key] = (doc, score)
+
+            # k = rare_k if _is_rare_query(q) else k_per_query
+            # variants = [q]
+            # variants.extend(_generate_alternate_queries(q))
+            # if alternate_queries and q in alternate_queries:
+            #     variants.extend(alternate_queries[q])
+
+            # for variant in variants:
+            #     for doc, score in self.similarity_search(variant, k=k, include_scores=True):
+            #         key = doc.page_content[:256]
+            #         if key not in aggregate or aggregate[key][1] < score:
+            #             aggregate[key] = (doc, score)
 
         # Sort by score desc and limit
         sorted_docs = sorted(aggregate.values(), key=lambda x: x[1], reverse=True)

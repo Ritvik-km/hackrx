@@ -15,6 +15,7 @@ from typing import Dict, List
 
 from app.rag_pipeline.loader import load_and_chunk_pdf
 from app.rag_pipeline.vector_store import (
+    Document,
     build_or_load_vector_store,
     search_with_context,  # optional helper
 )
@@ -35,10 +36,10 @@ async def handle(req) -> List[str]:
     # 2️⃣  Build / load FAISS vector store
     store = build_or_load_vector_store(chunks)
 
-    # 3️⃣  Retrieve clauses (choose ONE approach)
-    # --- Option A: single broad query (fast, simple) ----
-    # retrieved = search_with_context(store, " ".join(questions))
-    # --- Option B: multi-query combined (higher recall) --
+    # # 3️⃣  Retrieve clauses (choose ONE approach)
+    # # --- Option A: single broad query (fast, simple) ----
+    # # retrieved = search_with_context(store, " ".join(questions))
+    # # --- Option B: multi-query combined (higher recall) --
     retrieved = store.similarity_search_combined(
         queries=questions,
         k_per_query=5,
@@ -51,3 +52,4 @@ async def handle(req) -> List[str]:
 
     # 5️⃣  Return answers list (RunResponse expects it)
     return result["answers"]
+    # return answers
