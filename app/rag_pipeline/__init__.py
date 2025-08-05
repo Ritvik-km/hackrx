@@ -19,8 +19,10 @@ from app.rag_pipeline.vector_store import (
     build_or_load_vector_store,
     search_with_context,  # optional helper
 )
-from app.llm.structured_qa import ask_llm_structured, ask_llm_structured_parallel
+from app.llm.structured_qa import ask_llm_structured
 
+from app.rag_pipeline.reranker import rerank
+from app.config import settings
 
 async def handle(document_urls: List[str], questions: List[str]) -> List[str]:
     """
@@ -45,6 +47,9 @@ async def handle(document_urls: List[str], questions: List[str]) -> List[str]:
         k_per_query=5,
         max_total=20,
     )
+
+    if settings.ENABLE_RERANK:
+        retrieved = rerank(" ".join(questions), retrieved)
 
     # 4️⃣  Ask LLM for structured answers
     result: Dict = await ask_llm_structured(questions, retrieved)

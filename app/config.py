@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # ---- Local Paths ----
     DATA_DIR: Path = Path("data")
 
+    # ---- Retrieval ----
+    ENABLE_RERANK: bool = True
+    
     # ---- Pydantic meta ----
     model_config = SettingsConfigDict(
         env_file=".env",

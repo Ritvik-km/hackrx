@@ -12,6 +12,8 @@ import json
 from dotenv import load_dotenv
 import os
 
+from app.utils.keyword_matcher import correct_with_keywords
+
 load_dotenv()
 
 endpoint = "https://models.github.ai/inference"
@@ -52,6 +54,7 @@ async def ask_llm_structured(questions: List[str], retrieved_clauses: List[Docum
         "For each of the user's questions, answer in simple language using the context below.\n"
         # "Return a list of answers in JSON format like: { \"answers\": [q1_answer, q2_answer, ...] }\n"
         "Return a plain JSON object (no markdown), like: { \"answers\": [q1_answer, q2_answer, ...] }\n"
+        "Use exact wording from the document wherever possible.\n"
 
     )
 
@@ -101,6 +104,10 @@ async def ask_llm_structured(questions: List[str], retrieved_clauses: List[Docum
             raw_answers = [raw_answers]
 
         result["answers"] = [_stringify(a) for a in raw_answers]
+
+        for idx, (ans, clause) in enumerate(zip(result["answers"], safe_chunks)):
+            result["answers"][idx] = correct_with_keywords(ans, clause.page_content)
+            
         return result
     
     except json.JSONDecodeError as je:

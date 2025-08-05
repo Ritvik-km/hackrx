@@ -200,8 +200,8 @@ class FAISSVectorStore:
         self.index.add(vecs)
 
         # Persist mapping
-        # self.id_to_doc.extend(list(zip(texts, sanitized_meta)))
-        # self.doc_hashes.update(new_hashes)
+        self.id_to_doc.extend(zip(texts, sanitized_meta))
+        self.doc_hashes.update(new_hashes)
         self._save()
         # logger.info("Added %d documents (store now has %d).", len(docs), self.index.ntotal)
         logger.info(
@@ -260,7 +260,7 @@ class FAISSVectorStore:
         for q in queries:
             for doc, score in self.similarity_search(q, k=k_per_query, include_scores=True):
                 # Use content as unique key
-                key = doc.page_content[:256]
+                key = hashlib.sha256(doc.page_content.encode()).hexdigest()
                 # Retain the *highest* score if doc appears via multiple queries
                 if key not in aggregate or aggregate[key][1] < score:
                     aggregate[key] = (doc, score)
@@ -273,7 +273,7 @@ class FAISSVectorStore:
 
             for variant in variants:
                 for doc, score in self.similarity_search(variant, k=k, include_scores=True):
-                    key = doc.page_content[:256]
+                    key = hashlib.sha256(doc.page_content.encode()).hexdigest()
                     if key not in aggregate or aggregate[key][1] < score:
                         aggregate[key] = (doc, score)
 
