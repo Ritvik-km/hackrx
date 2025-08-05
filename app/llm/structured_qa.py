@@ -86,22 +86,22 @@ async def ask_llm_structured(questions: List[str], retrieved_clauses: List[Docum
         if content.strip().startswith("```"):
             content = content.strip().strip("`").strip("json").strip()
 
-        return json.loads(content)
-        # result = json.loads(content)
+        # return json.loads(content)
+        result = json.loads(content)
 
-        # def _stringify(item):
-        #     if isinstance(item, list):
-        #         return " ".join(_stringify(x) for x in item)
-        #     if isinstance(item, str):
-        #         return item
-        #     return str(item)
+        def _stringify(item):
+            if isinstance(item, list):
+                return " ".join(_stringify(x) for x in item)
+            if isinstance(item, str):
+                return item
+            return str(item)
 
-        # raw_answers = result.get("answers", [])
-        # if not isinstance(raw_answers, list):
-        #     raw_answers = [raw_answers]
+        raw_answers = result.get("answers", [])
+        if not isinstance(raw_answers, list):
+            raw_answers = [raw_answers]
 
-        # result["answers"] = [_stringify(a) for a in raw_answers]
-        # return result
+        result["answers"] = [_stringify(a) for a in raw_answers]
+        return result
     
     except json.JSONDecodeError as je:
         print("❌ JSON decode error:", je)

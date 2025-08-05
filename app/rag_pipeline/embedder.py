@@ -31,7 +31,7 @@ class GoogleEmbeddingModel:
     def __init__(self):
         self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         self.model = "gemini-embedding-001"
-        self.cache = GeminiEmbeddingCache()
+        # self.cache = GeminiEmbeddingCache()
 
     @retry(wait=wait_exponential(min=2, max=20), stop=stop_after_attempt(5))
     def embed_single(self, text, config):
@@ -57,6 +57,7 @@ class GoogleEmbeddingModel:
     #             raise
     def embed_batch(self, texts: List[str], indices: List[int], config, all_embeddings):
         try:
+          
             result = self.client.models.embed_content(
                 model=self.model,
                 contents=texts,         # ✅ pass full batch here
@@ -65,7 +66,7 @@ class GoogleEmbeddingModel:
             for j, embed in enumerate(result.embeddings):
                 global_index = indices[j]
                 all_embeddings[global_index] = embed.values
-                self.cache.set(texts[j], embed.values)
+                # self.cache.set(texts[j], embed.values)
         except Exception as e:
             print(f"❌ Error embedding batch: {e}")
             raise
@@ -81,12 +82,12 @@ class GoogleEmbeddingModel:
         uncached_indices = []
 
         for i, text in enumerate(texts):
-            cached = self.cache.get(text)
-            if cached:
-                all_embeddings[i] = cached
-            else:
-                uncached_texts.append(text)
-                uncached_indices.append(i)
+            # cached = self.cache.get(text)
+            # if cached:
+            #     all_embeddings[i] = cached
+            # else:
+            uncached_texts.append(text)
+            uncached_indices.append(i)
 
         MAX_TOKENS_PER_BATCH = 8000
         current_batch = []
@@ -113,9 +114,9 @@ class GoogleEmbeddingModel:
 
 
     def embed_query(self, text: str, output_dim: int = 3072, task_type: str = "RETRIEVAL_QUERY") -> List[float]:
-        cached = self.cache.get(text)
-        if cached:
-            return cached
+        # cached = self.cache.get(text)
+        # if cached:
+        #     return cached
 
         config = types.EmbedContentConfig(
             task_type=task_type,
@@ -127,7 +128,7 @@ class GoogleEmbeddingModel:
             config=config
             )
         embedding = result.embeddings[0].values
-        self.cache.set(text, embedding)
+        # self.cache.set(text, embedding)
         return embedding
     
     
