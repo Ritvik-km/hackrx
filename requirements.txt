@@ -1,6 +1,5 @@
 # Core FastAPI and web framework
 fastapi
-uvicorn
 
 # Pydantic for data validation and settings
 pydantic
@@ -49,5 +48,8 @@ python-dotenv
 # Data processing
 numpy
 
-# Standard library extensions
-typing-extensions
+# Retry utilities
+tenacity
+
+# Cross-encoder for reranking
+sentence-transformers
