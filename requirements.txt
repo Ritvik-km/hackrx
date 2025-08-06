@@ -52,4 +52,4 @@ numpy
 tenacity
 
 # Cross-encoder for reranking
-sentence-transformers
+# sentence-transformers
