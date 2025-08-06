@@ -18,10 +18,10 @@ async def hackrx_run(payload: RunRequest, authorization: str = Header(...)):
     if authorization != f"Bearer {settings.TEAM_TOKEN}":
         raise HTTPException(status_code=401, detail="Invalid team token")
 
-    # answers = await pipeline_handle(payload)
-    documents = []
-    for url in payload.documents:
-        documents.append(url)
+    answers = await pipeline_handle(payload)
+    # documents = []
+    # for url in payload.documents:
+    #     documents.append(url)
 
-    answers = await pipeline_handle(documents, payload.questions)
+    # answers = await pipeline_handle(documents, payload.questions)
     return RunResponse(answers=answers)

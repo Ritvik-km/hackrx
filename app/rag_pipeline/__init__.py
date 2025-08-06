@@ -24,19 +24,20 @@ from app.llm.structured_qa import ask_llm_structured
 from app.rag_pipeline.reranker import rerank
 from app.config import settings
 
-async def handle(document_urls: List[str], questions: List[str]) -> List[str]:
+async def handle(req) -> List[str]:
     """
     Main entry called by FastAPI.
     Expects a list of document URLs and a list of questions.
     """
+    
+    url: str = req.documents
+    questions: List[str] = req.questions
 
-    # 1️⃣  Chunk each document and aggregate
-    all_chunks = []
-    for url in document_urls:
-        all_chunks.extend(await load_and_chunk(url))
+    # 1️⃣  Chunk the PDF
+    chunks = await load_and_chunk(url)
 
     # 2️⃣  Build / load FAISS vector store
-    store = build_or_load_vector_store(all_chunks)
+    store = build_or_load_vector_store(chunks)
 
     # # 3️⃣  Retrieve clauses (choose ONE approach)
     # # --- Option A: single broad query (fast, simple) ----
