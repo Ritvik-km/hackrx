@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     EMBEDDING_ENDPOINT: str = "https://models.github.ai/inference"
 
     # ---- Chunking ----
-    CHUNK_SIZE: int = 1500
-    CHUNK_OVERLAP: int = 250
+    CHUNK_SIZE: int = 1400
+    CHUNK_OVERLAP: int = 200
 
     # ---- Local Paths ----
     DATA_DIR: Path = Path("data")
