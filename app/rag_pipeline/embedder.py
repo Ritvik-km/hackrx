@@ -35,7 +35,7 @@ class GoogleEmbeddingModel:
         self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         self.model = "gemini-embedding-001"
         self.base_delay = 1.0  # Base delay between requests
-        # self.cache = GeminiEmbeddingCache()
+        self.cache = GeminiEmbeddingCache()
 
     def _exponential_backoff(self, attempt: int) -> float:
         """Calculate exponential backoff with jitter"""
@@ -72,7 +72,7 @@ class GoogleEmbeddingModel:
             for j, embed in enumerate(result.embeddings):
                 global_index = indices[j]
                 all_embeddings[global_index] = embed.values
-                # self.cache.set(texts[j], embed.values)
+                self.cache.set(texts[j], embed.values)
                 
             print(f"✅ Successfully embedded batch of {len(texts)} texts")
             
@@ -133,12 +133,12 @@ class GoogleEmbeddingModel:
 
         # Check cache (currently commented out but structure preserved)
         for i, text in enumerate(texts):
-            # cached = self.cache.get(text)
-            # if cached:
-            #     all_embeddings[i] = cached
-            # else:
-            uncached_texts.append(text)
-            uncached_indices.append(i)
+            cached = self.cache.get(text)
+            if cached:
+                all_embeddings[i] = cached
+            else:
+                uncached_texts.append(text)
+                uncached_indices.append(i)
 
         if not uncached_texts:
             return all_embeddings
@@ -194,9 +194,9 @@ class GoogleEmbeddingModel:
         return all_embeddings
 
     def embed_query(self, text: str, output_dim: int = 3072, task_type: str = "RETRIEVAL_QUERY") -> List[float]:
-        # cached = self.cache.get(text)
-        # if cached:
-        #     return cached
+        cached = self.cache.get(text)
+        if cached:
+            return cached
 
         config = types.EmbedContentConfig(
             task_type=task_type,

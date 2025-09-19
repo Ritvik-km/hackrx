@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     DATA_DIR: Path = Path("data")
 
     # ---- Retrieval ----
-    ENABLE_RERANK: bool = False
+    ENABLE_RERANK: bool = True
     
     # ---- Pydantic meta ----
     model_config = SettingsConfigDict(
